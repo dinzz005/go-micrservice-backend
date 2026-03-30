@@ -28,7 +28,7 @@ WHERE t.id = ?;
 
 -- name: ListTasks :many
 SELECT 
-    t.id, sql/queries.sql:27:7: column reference "id" is ambiguous
+    t.id,
     t.title, 
     t.description, 
     s.status AS status_name,

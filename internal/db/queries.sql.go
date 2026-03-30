@@ -130,7 +130,7 @@ func (q *Queries) GetUserById(ctx context.Context, id int32) (GetUserByIdRow, er
 
 const listTasks = `-- name: ListTasks :many
 SELECT 
-    t.id, 
+    t.id,
     t.title, 
     t.description, 
     s.status AS status_name,
