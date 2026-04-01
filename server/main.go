@@ -28,10 +28,27 @@ func main ()  {
     switch r.Method {
 		case http.MethodPost:
 			taskHandler.Create(w, r)
+		case http.MethodGet:
+			taskHandler.GetAll(w, r)
 		default:
 			http.Error(w, "Method not allowed",http.StatusMethodNotAllowed)
 		}
 	})
+
+	mux.HandleFunc("/tasks/", func(w http.ResponseWriter, r *http.Request) {
+    switch r.Method {
+		case http.MethodGet:
+			taskHandler.GetOne(w, r)
+		case http.MethodPut:
+			taskHandler.Update(w,r)
+		case http.MethodDelete:
+			taskHandler.Delete(w,r)
+		default:
+			http.Error(w, "Method not allowed",http.StatusMethodNotAllowed)
+		}
+	})
+
+
 
 	srv := &http.Server{
 		Addr: ":9090",
