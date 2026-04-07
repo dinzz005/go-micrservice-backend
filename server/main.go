@@ -5,6 +5,7 @@ import (
 	"log"
 	"microservices/internal/db"
 	"microservices/internal/handler"
+	"microservices/internal/middleware"
 	"net/http"
 	"os"
 	"os/signal"
@@ -52,11 +53,18 @@ func main ()  {
 		}
 	})
 
+	handler := middleware.Chain(
+		mux,
+		middleware.CORS(),
+		middleware.Recovery(),
+		middleware.Logging(),
+		middleware.RequestID(),
+	)
 
 
 	srv := &http.Server{
 		Addr: ":9090",
-		Handler: mux,
+		Handler: handler,
 		IdleTimeout: 120 * time.Second,
 		ReadTimeout: 5 * time.Second,
 		WriteTimeout: 10 * time.Second,
