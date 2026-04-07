@@ -12,11 +12,15 @@ import (
 	"time"
 
 	dbConn "microservices/pkg/db"
+
+	"github.com/joho/godotenv"
 )
 
 
 
 func main ()  {
+
+	godotenv.Load()
 	database := dbConn.NewDB()
 	queries := db.New(database)
 

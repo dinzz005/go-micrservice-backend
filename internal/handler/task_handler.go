@@ -3,7 +3,9 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"microservices/internal/db"
+	"microservices/internal/response"
 	"net/http"
 	"strconv"
 	"strings"
@@ -69,7 +71,10 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// Decode JSON request body
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
+    response.JSON(w,http.StatusBadRequest,  response.APIResponse{
+			Status: "Error",
+			Message: "invalid request body",
+		})
 		return
 	}
 
@@ -78,22 +83,34 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	// -----------------------------
 
 	if req.Title == "" {
-		http.Error(w, "title is required", http.StatusBadRequest)
+     response.JSON(w,http.StatusBadRequest,  response.APIResponse{
+			Status: "Error",
+			Message: "Title is required",
+		})
 		return
 	}
 
 	if req.StatusID == 0 {
-		http.Error(w, "status_id is required", http.StatusBadRequest)
+		  response.JSON(w,http.StatusBadRequest,  response.APIResponse{
+			Status: "Error",
+			Message: "Status_id is required",
+		})	
+
 		return
 	}
-
 	if req.UserID == 0 {
-		http.Error(w, "user_id is required", http.StatusBadRequest)
+	  response.JSON(w,http.StatusBadRequest,  response.APIResponse{
+			Status: "success",
+			Message: "Access Denied",
+		})	
 		return
 	}
 
 	if req.EndTime.Before(req.StartTime) {
-		http.Error(w, "end_time must be after start_time", http.StatusBadRequest)
+		response.JSON(w, http.StatusBadRequest, response.APIResponse{
+			Status: "Error",
+			Message: "end_time must be after start_time",
+		})
 		return
 	}
 
@@ -126,15 +143,20 @@ func (h *TaskHandler) Create(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
-		http.Error(w, "failed to create task", http.StatusInternalServerError)
+		response.JSON(w, http.StatusInternalServerError, response.APIResponse{
+			Status: "Error",
+			Message: "something went wrong,failed to create task",
+		})
 		return
 	}
 
 	// -----------------------------
 	// Response
 	// -----------------------------
-
-	w.WriteHeader(http.StatusCreated)
+  response.JSON(w, http.StatusCreated, response.APIResponse{
+		Status: "success",
+		Message: "Task created Successfully",
+	})
 }
 
 
@@ -167,9 +189,13 @@ Behavior:
 func(h *TaskHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 	tasks, err := h.Q.ListTasks(r.Context())
 	if err != nil {
-		http.Error(w , "failed to fetched tasks", http.StatusInternalServerError)
+		response.JSON(w, http.StatusInternalServerError,response.APIResponse{
+		 Status: "Error",
+		 Message: "Something went wrong, Failed to fetch Tasks",
+	 })
 		return
 	}
+
   var res []TaskResponse
 	for _, t := range tasks {
 		res = append(res, TaskResponse{
@@ -182,9 +208,12 @@ func(h *TaskHandler) GetAll(w http.ResponseWriter, r *http.Request) {
 			EndTime: t.EndTime.Time,
 		})
 	}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
-
+ 
+	 response.JSON(w, http.StatusOK,  response.APIResponse{
+		 Status: "success",
+		 Message: "All the tasks fetched Successfully",
+		 Data: res,
+	 })
 }
 
 
@@ -204,13 +233,19 @@ func(h *TaskHandler) GetOne(w http.ResponseWriter, r *http.Request){
 	idStr := strings.TrimPrefix( r.URL.Path, "/tasks/")
 	id , err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "Invalid task ID.", http.StatusBadRequest)
+		response.JSON(w, http.StatusBadRequest, response.APIResponse{
+			Status: "Error",
+			Message: "Invalid Task ID",
+		})
 		return
 	}
 
 	task, err := h.Q.GetTask(r.Context(), int32(id))
 	if err != nil {
-		http.Error(w, "task not found", http.StatusNotFound)
+		response.JSON(w, http.StatusNotFound, response.APIResponse{
+			Status: "Error",
+			Message: "task not found",
+		})
 		return
 	}
 
@@ -226,8 +261,12 @@ func(h *TaskHandler) GetOne(w http.ResponseWriter, r *http.Request){
 		UpdatedAt:   task.UpdatedAt.Time,
 	}
 
-  w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(res)
+
+	response.JSON(w, http.StatusOK, response.APIResponse{
+		Status: "suucess",
+		Message: fmt.Sprintf("Task data for %d fetched Successfully.", id),
+		Data: res,
+	})
 
 }
 
@@ -256,7 +295,10 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/tasks/")
 	id , err := strconv.Atoi(idStr)
 	if err != nil {
-		http.Error(w, "invalid task id", http.StatusBadRequest)
+		response.JSON(w, http.StatusBadRequest, response.APIResponse{
+			Status: "Error",
+			Message: "Invalid task id",
+		})
 		return
 	}
 
@@ -270,18 +312,26 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 
 	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil{
-		
-		http.Error(w, "invalid requestt body", http.StatusBadRequest)
+		response.JSON(w, http.StatusBadRequest, response.APIResponse{
+			Status: "Error",
+			Message: "invalid request body ",
+		})		
 		return
 	}
 
 		if req.Title == "" {
-		http.Error(w, "title is required", http.StatusBadRequest)
+			response.JSON(w, http.StatusBadRequest, response.APIResponse{
+				Status: "Error",
+				Message: "title is required.",
+			})
 		return
 	}
 
 	if req.EndTime.Before(req.StartTime) {
-		http.Error(w, "invalid time range", http.StatusBadRequest)
+		response.JSON(w, http.StatusBadRequest, response.APIResponse{
+			Status: "Error",
+			Message: "Invalid time range",
+		})
 		return
 	}
 
@@ -302,18 +352,24 @@ func (h *TaskHandler) Update(w http.ResponseWriter, r *http.Request) {
 		},
 
 		EndTime: sql.NullTime{
-			Time: req.StartTime,
+			Time: req.EndTime,
 			Valid: true,
 		},
 
 	})
 
 	if err != nil {
-		http.Error(w,"failed to update tasks", http.StatusInternalServerError)
+		response.JSON(w, http.StatusInternalServerError ,response.APIResponse{
+			Status: "Error",
+			Message: "failed to update task ",
+		})
 		return
 	}
-	
-	w.WriteHeader(http.StatusOK)
+
+	response.JSON(w, http.StatusCreated, response.APIResponse{
+		Status: "success",
+		Message: "Task updated SuccessFully",
+	})
 }
 
 
@@ -330,15 +386,25 @@ func (h *TaskHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	idStr := strings.TrimPrefix(r.URL.Path, "/tasks/")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		response.JSON(w, http.StatusBadRequest, response.APIResponse{
+			Status: "Error",
+			Message: "invalid task id",
+		})
 		http.Error(w, "invalid task id", http.StatusBadRequest)
 		return
 	}
 
 	err = h.Q.DeleteTask(r.Context(), int32(id))
 	if err != nil {
-		http.Error(w, "failed to delete task", http.StatusInternalServerError)
+		response.JSON(w, http.StatusInternalServerError, response.APIResponse{
+			Status: "Error",
+			Message: "Failed to delete Task",
+		})
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	response.JSON(w, http.StatusOK, response.APIResponse{
+		Status: "success",
+		Message: "Task Deleted Successfully",
+	})
 }

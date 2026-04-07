@@ -7,15 +7,10 @@ import (
 	"time"
 
 	"github.com/go-sql-driver/mysql"
-	"github.com/joho/godotenv"
 )
 
 func NewDB() *sql.DB {
 	 //load env
-	 err := godotenv.Load()
-	 if err != nil {
-		 log.Fatal("Error Loading config file")
-	 }
 
 	 cfg := mysql.Config{
 		 User: os.Getenv("DB_USER"),
@@ -30,6 +25,11 @@ func NewDB() *sql.DB {
 	 dsn := cfg.FormatDSN()
 
 	 db, err := sql.Open("mysql", dsn)
+
+	 db.SetMaxOpenConns(20)
+	 db.SetMaxIdleConns(10)
+	 db.SetConnMaxLifetime(30 * time.Minute)
+
 	 if err != nil {
 		 log.Fatal(err)
 	 }
