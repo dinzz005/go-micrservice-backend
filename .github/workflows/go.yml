@@ -1,0 +1,78 @@
+name: Go CI Pipeline
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  ci:
+    name: Lint + Test + Build + Security
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Setup Go
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      # Cache dependencies
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      # Install deps
+      - name: Install dependencies
+        run: go mod tidy
+
+      # Format check (fail if not formatted)
+      - name: Check formatting
+        run: |
+          if [ "$(gofmt -l .)" != "" ]; then
+            echo "Code is not formatted. Run 'gofmt -w .'"
+            exit 1
+          fi
+
+      # Lint
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+      # Conditional tests
+      - name: Run tests if present
+        run: |
+          if find . -type f -name "*_test.go" | grep -q .; then
+            echo "Running tests..."
+            go test ./... -v -race -coverprofile=coverage.out
+          else
+            echo "No test files found. Skipping tests."
+          fi
+
+      # Build
+      - name: Build
+        run: go build -v ./...
+
+      # Security scan (gosec)
+      - name: Run gosec
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          gosec ./...
+
+      # Vulnerability check (official Go tool)
+      - name: Run govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...
