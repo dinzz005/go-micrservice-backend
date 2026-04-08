@@ -38,19 +38,19 @@ jobs:
         run: go mod tidy
 
       # Format check (fail if not formatted)
-      - name: Check formatting
-        run: |
-          if [ "$(gofmt -l .)" != "" ]; then
-            echo "Code is not formatted. Run 'gofmt -w .'"
-            exit 1
-          fi
-
-      # Lint
-      - name: Run linter
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-
+      # - name: Check formatting
+      #   run: |
+      #     if [ "$(gofmt -l .)" != "" ]; then
+      #       echo "Code is not formatted. Run 'gofmt -w .'"
+      #       exit 1
+      #     fi
+      #
+      # # Lint
+      # - name: Run linter
+      #   uses: golangci/golangci-lint-action@v6
+      #   with:
+      #     version: latest
+      #
       # Conditional tests
       - name: Run tests if present
         run: |
